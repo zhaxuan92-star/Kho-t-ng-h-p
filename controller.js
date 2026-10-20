@@ -14,7 +14,8 @@ window.addEventListener("error",e=>{markDiagnostic("Lỗi JavaScript: "+(e.messa
 window.addEventListener("unhandledrejection",e=>{const m=e.reason&&e.reason.message?e.reason.message:String(e.reason||"không rõ");markDiagnostic("Lỗi Promise: "+m);});
 const baseUrl=()=>workerUrl.value.trim().replace(/\/+$/,"");
 function showReport(value){report.textContent=typeof value==="string"?value:JSON.stringify(value,null,2);report.style.display="block";}
-input.addEventListener("change",()=>{\n markDiagnostic("Sự kiện chọn tệp đã chạy ✓");
+input.addEventListener("change",()=>{
+ markDiagnostic("Sự kiện chọn tệp đã chạy ✓");
  const file=input.files&&input.files[0];
  report.style.display="none";
  if(!file){nameEl.textContent="Chưa chọn tệp";checkBtn.disabled=true;uploadBtn.disabled=true;setStatus("Chưa chọn APK.");return;}
@@ -37,7 +38,8 @@ checkWorkerBtn.addEventListener("click",async()=>{
  }catch(e){workerState.textContent="Lỗi kết nối";setStatus("Không kiểm tra được máy chủ: "+e.message+". Hãy kiểm tra URL, trạng thái Render và CORS.");}
  finally{checkWorkerBtn.disabled=false;}
 });
-uploadBtn.addEventListener("click",async()=>{\n markDiagnostic("Đã nhận lệnh bấm Việt hóa ✓; đang kiểm tra điều kiện…");
+uploadBtn.addEventListener("click",async()=>{
+ markDiagnostic("Đã nhận lệnh bấm Việt hóa ✓; đang kiểm tra điều kiện…");
  const file=input.files&&input.files[0],base=baseUrl();
  if(!file){setStatus("Trước tiên hãy chọn tệp APK.");return;}
  if(!base){setStatus("Nhập địa chỉ worker Render trước khi tải APK lên.");workerUrl.focus();return;}
@@ -77,7 +79,8 @@ uploadBtn.addEventListener("click",async()=>{\n markDiagnostic("Đã nhận lệ
  }catch(e){markDiagnostic("Luồng Việt hóa thất bại: "+e.message);uploadState.textContent="THẤT BẠI: "+e.message;setStatus("Không tải/xử lý được APK: "+e.message);showReport("LỖI TẢI APK\n"+e.message+"\n\nNếu đây là lỗi CORS, cần cấu hình worker cho phép origin của website. Nếu HTTP 5xx, mở Logs trên Render.");}
  finally{uploadBtn.disabled=false;checkBtn.disabled=false;uploadBtn.textContent="Tải lên máy chủ, dịch thử và đóng gói APK";}
 });
-checkBtn.addEventListener("click",async()=>{\n markDiagnostic("Đã nhận lệnh Kiểm tra tệp ✓");
+checkBtn.addEventListener("click",async()=>{
+ markDiagnostic("Đã nhận lệnh Kiểm tra tệp ✓");
  const file=input.files&&input.files[0];if(!file){setStatus("Hãy chọn APK trước.");return;}
  if(file.size>4*1048576){setStatus("Tệp lớn hơn 4 MiB nên không thể kiểm kê qua Vercel. Bấm “Tải lên máy chủ, dịch thử và đóng gói APK” để gửi sang Render.");return;}
  checkBtn.disabled=true;checkBtn.textContent="Đang kiểm tra…";setStatus("Đang gửi tệp nhỏ đến API kiểm kê Vercel…");report.style.display="none";
