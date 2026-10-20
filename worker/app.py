@@ -1,4 +1,4 @@
-import os, re, shutil, subprocess, tempfile, uuid, zipfile
+import os, re, shutil, subprocess, tempfile, uuid, zipfile, json
 from pathlib import Path
 from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.responses import FileResponse
@@ -54,6 +54,34 @@ def run(cmd, cwd=None, timeout=300):
     if p.returncode:
         raise RuntimeError((p.stderr or p.stdout or "Command failed")[-3000:])
     return p.stdout
+
+def inspect_game(apk_path):
+    """Identify common Unity/IL2CPP markers without modifying native game code."""
+    result = {"engine": "Unknown", "scriptingBackend": "Unknown", "unityFiles": [], "textCandidates": []}
+    try:
+        with zipfile.ZipFile(apk_path) as z:
+            names = z.namelist()
+            lower = [n.lower() for n in names]
+            unity_markers = ("assets/bin/data/", "assets/bin/data.unityweb", "globalgamemanagers",
+                             "resources.assets", "sharedassets", "libunity.so")
+            found = [names[i] for i, n in enumerate(lower)
+                     if any(marker in n for marker in unity_markers)]
+            if found:
+                result["engine"] = "Unity"
+                result["unityFiles"] = found[:100]
+            if any("libil2cpp.so" in n for n in lower) or any("global-metadata.dat" in n for n in lower):
+                result["scriptingBackend"] = "IL2CPP"
+            elif any(n.endswith("assembly-csharp.dll") for n in lower):
+                result["scriptingBackend"] = "Mono"
+            for n in names:
+                low = n.lower()
+                if ("streamingassets" in low or low.startswith("assets/")) and low.endswith((".json", ".csv", ".xml", ".txt", ".strings")):
+                    result["textCandidates"].append(n)
+                    if len(result["textCandidates"]) >= 200:
+                        break
+    except Exception:
+        pass
+    return result
 
 def find_tool(name):
     paths = [shutil.which(name)]
@@ -156,7 +184,7 @@ async def translate_apk(file: UploadFile = File(...)):
         return FileResponse(signed, media_type="application/vnd.android.package-archive",
             filename="apk-vietsub-debug-signed.apk",
             headers={"X-Translation-Report": report[:900], "X-Translated-Strings": str(translated),
-                     "X-Unchanged-Strings": str(unchanged), "X-Signing": "debug-key", "X-Game-Engine": game_profile["engine"], "X-Scripting-Backend": game_profile["scriptingBackend"]})
+                     "X-Unchanged-Strings": str(unchanged), "X-Signing": "debug-key", "X-Game-Engine": game_profile["engine"], "X-Scripting-Backend": game_profile["scriptingBackend"], "X-Unity-Text-Candidates": str(len(game_profile["textCandidates"])), "X-Unity-Assets-Translated": "false" if game_profile["engine"] == "Unity" else "not-applicable"})
     except HTTPException:
         raise
     except subprocess.TimeoutExpired:
