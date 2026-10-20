@@ -5,11 +5,15 @@ Docker worker for APK resource decoding, conservative glossary replacements, reb
 ## Run locally
 ```sh
 docker build -t apk-vietsub-worker -f worker/Dockerfile .
-docker run --rm -p 8080:8080 -e MAX_UPLOAD_MB=100 apk-vietsub-worker
+docker run --rm -p 8080:8080 -e MAX_UPLOAD_MB=200 apk-vietsub-worker
 ```
 
 Health: `GET /`
 Process: `POST /api/translate` as multipart form field named `file`.
+
+## Upload size and game compatibility
+- Worker upload cap defaults to 200 MiB; the container still needs enough RAM/disk and the hosting provider may impose lower request/time limits.
+- APKs with Unity `assets/bin/Data`, AssetBundles, or IL2CPP native libraries are detected, but the current starter worker does not extract or translate Unity serialized assets or IL2CPP strings.
 
 ## Important limitations
 - The included glossary is only a starter dictionary, not general-purpose AI translation.
