@@ -8,6 +8,6 @@ services:
     healthCheckPath: /
     envVars:
       - key: MAX_UPLOAD_MB
-        value: "100"
+        value: "200"
       - key: ALLOWED_ORIGIN
         value: "*"
