@@ -4,13 +4,13 @@ from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 
-app = FastAPI(title="APK Vietsub Worker", version="0.2.0")
+app = FastAPI(title="APK Vietsub Worker", version="0.3.0")
 allowed_origin = os.getenv("ALLOWED_ORIGIN", "*")
 app.add_middleware(
     CORSMiddleware, allow_origins=[allowed_origin] if allowed_origin != "*" else ["*"],
     allow_credentials=False, allow_methods=["GET", "POST"], allow_headers=["*"]
 )
-MAX_UPLOAD = int(os.getenv("MAX_UPLOAD_MB", "100")) * 1024 * 1024
+MAX_UPLOAD = int(os.getenv("MAX_UPLOAD_MB", "200")) * 1024 * 1024
 WORK_ROOT = Path("/tmp/apk-worker")
 WORK_ROOT.mkdir(parents=True, exist_ok=True)
 
@@ -69,8 +69,8 @@ def find_tool(name):
 @app.get("/")
 def health():
     return {"ok": True, "service": "apk-vietsub-worker", "version": "0.2.0",
-            "capabilities": ["apktool-decode", "safe-glossary-pass", "rebuild", "debug-sign"],
-            "limitations": ["starter glossary only", "no general AI translation", "some APKs cannot be rebuilt"]}
+            "capabilities": ["apktool-decode", "safe-glossary-pass", "rebuild", "debug-sign", "unity-detection"],
+            "limits": {"maxUploadMB": MAX_UPLOAD // (1024*1024), "maxExpandedMB": 1024}, "limitations": ["starter glossary only", "no general AI translation", "Unity/IL2CPP assets need a separate localization extractor", "some APKs cannot be rebuilt"]}
 
 @app.post("/api/translate")
 async def translate_apk(file: UploadFile = File(...)):
@@ -135,6 +135,10 @@ async def translate_apk(file: UploadFile = File(...)):
             updated = re.sub(r">([^<>]+)<", replace_text, original)
             if updated != original:
                 xml.write_text(updated, encoding="utf-8")
+        if game_profile["engine"] == "Unity":
+            # Avoid implying a full game translation: Apktool handles Android resources,
+            # not Unity AssetBundles, serialized assets, or IL2CPP game text.
+            reviewed.append("UNITY_GAME_ASSETS_DETECTED: Unity assets need Unity-aware extraction; not translated here.")
         output_unsigned = job / "rebuilt-unsigned.apk"
         run([apktool, "b", str(decoded), "-o", str(output_unsigned)], timeout=300)
         signer = find_tool("apksigner")
@@ -152,7 +156,7 @@ async def translate_apk(file: UploadFile = File(...)):
         return FileResponse(signed, media_type="application/vnd.android.package-archive",
             filename="apk-vietsub-debug-signed.apk",
             headers={"X-Translation-Report": report[:900], "X-Translated-Strings": str(translated),
-                     "X-Unchanged-Strings": str(unchanged), "X-Signing": "debug-key"})
+                     "X-Unchanged-Strings": str(unchanged), "X-Signing": "debug-key", "X-Game-Engine": game_profile["engine"], "X-Scripting-Backend": game_profile["scriptingBackend"]})
     except HTTPException:
         raise
     except subprocess.TimeoutExpired:
