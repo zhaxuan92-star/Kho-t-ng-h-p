@@ -4,13 +4,13 @@ from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 
-app = FastAPI(title="APK Vietsub Worker", version="0.3.0")
+app = FastAPI(title="APK Vietsub Worker", version="0.4.0")
 allowed_origin = os.getenv("ALLOWED_ORIGIN", "*")
 app.add_middleware(
     CORSMiddleware, allow_origins=[allowed_origin] if allowed_origin != "*" else ["*"],
     allow_credentials=False, allow_methods=["GET", "POST"], allow_headers=["*"]
 )
-MAX_UPLOAD = int(os.getenv("MAX_UPLOAD_MB", "200")) * 1024 * 1024
+MAX_UPLOAD = int(os.getenv("MAX_UPLOAD_MB", "900")) * 1024 * 1024
 WORK_ROOT = Path("/tmp/apk-worker")
 WORK_ROOT.mkdir(parents=True, exist_ok=True)
 
@@ -63,7 +63,7 @@ def inspect_game(apk_path):
             names = z.namelist()
             lower = [n.lower() for n in names]
             unity_markers = ("assets/bin/data/", "assets/bin/data.unityweb", "globalgamemanagers",
-                             "resources.assets", "sharedassets", "libunity.so")
+                             "resources.assets", "sharedassets", "libunity.so", "global-metadata.dat", "libil2cpp.so")
             found = [names[i] for i, n in enumerate(lower)
                      if any(marker in n for marker in unity_markers)]
             if found:
@@ -96,9 +96,9 @@ def find_tool(name):
 
 @app.get("/")
 def health():
-    return {"ok": True, "service": "apk-vietsub-worker", "version": "0.2.0",
+    return {"ok": True, "service": "apk-vietsub-worker", "version": "0.4.0",
             "capabilities": ["apktool-decode", "safe-glossary-pass", "rebuild", "debug-sign", "unity-detection"],
-            "limits": {"maxUploadMB": MAX_UPLOAD // (1024*1024), "maxExpandedMB": 1024}, "limitations": ["starter glossary only", "no general AI translation", "Unity/IL2CPP assets need a separate localization extractor", "some APKs cannot be rebuilt"]}
+            "limits": {"maxUploadMB": MAX_UPLOAD // (1024*1024), "maxExpandedMB": 1024}, "limitations": ["starter glossary only", "no general AI translation", "Unity detection only; Unity/IL2CPP assets are not extracted or translated", "some APKs cannot be rebuilt"]}
 
 @app.post("/api/translate")
 async def translate_apk(file: UploadFile = File(...)):
@@ -121,6 +121,7 @@ async def translate_apk(file: UploadFile = File(...)):
                 out.write(chunk)
         if size < 8 or not zipfile.is_zipfile(input_path):
             raise HTTPException(400, "Tệp không phải APK/ZIP hợp lệ.")
+        game_profile = inspect_game(input_path)
         with zipfile.ZipFile(input_path) as z:
             infos = z.infolist()
             if len(infos) > 50000:
