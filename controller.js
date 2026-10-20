@@ -46,7 +46,10 @@ uploadBtn.addEventListener("click",async()=>{
   const data=await new Promise((resolve,reject)=>{
    const form=new FormData();form.append("file",file,file.name);
    const xhr=new XMLHttpRequest();xhr.open("POST",base+"/api/translate",true);xhr.timeout=30*60*1000;
-   xhr.upload.onprogress=e=>{if(e.lengthComputable){const p=Math.min(100,Math.round(e.loaded/e.total*100));uploadProgress.value=p;uploadPercent.textContent=p+"%";uploadState.textContent=p===100?"Đã gửi tệp; đang chờ máy chủ xử lý…":"Đang tải lên: "+p+"%";setStatus("Đang gửi APK lên máy chủ: "+p+"%");}};
+   // Do not attach upload progress listeners to this cross-origin XHR.
+   // Browsers may preflight such uploads with OPTIONS; a plain FormData POST
+   // avoids that extra preflight. Show indeterminate upload status instead.
+   uploadProgress.removeAttribute("value");uploadPercent.textContent="Đang gửi";uploadState.textContent="Đang tải lên (không hiển thị phần trăm)…";
    xhr.onload=()=>{
     if(xhr.status<200||xhr.status>=300){
      const reader=new FileReader();reader.onload=()=>{let msg="Máy chủ trả HTTP "+xhr.status;try{const d=JSON.parse(reader.result);msg=d.detail||d.error||msg;}catch{}reject(new Error(msg));};reader.onerror=()=>reject(new Error("Máy chủ trả HTTP "+xhr.status));reader.readAsText(xhr.response);
