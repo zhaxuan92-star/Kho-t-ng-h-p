@@ -5,10 +5,18 @@ from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI(title="APK Vietsub Worker", version="0.4.0")
-allowed_origin = os.getenv("ALLOWED_ORIGIN", "*")
+# CORS must allow the browser's OPTIONS preflight. Upload-progress listeners
+# cause browsers to preflight cross-origin uploads before POST /api/translate.
+_raw_origins = os.getenv("ALLOWED_ORIGIN", "*").strip()
+_allowed_origins = ["*"] if _raw_origins == "*" else [x.strip().rstrip("/") for x in _raw_origins.split(",") if x.strip()]
 app.add_middleware(
-    CORSMiddleware, allow_origins=[allowed_origin] if allowed_origin != "*" else ["*"],
-    allow_credentials=False, allow_methods=["GET", "POST"], allow_headers=["*"]
+    CORSMiddleware,
+    allow_origins=_allowed_origins or ["*"],
+    allow_credentials=False,
+    allow_methods=["*"],
+    allow_headers=["*"],
+    expose_headers=["Content-Disposition", "Content-Length", "Content-Type"],
+    max_age=3600,
 )
 MAX_UPLOAD = int(os.getenv("MAX_UPLOAD_MB", "900")) * 1024 * 1024
 WORK_ROOT = Path("/tmp/apk-worker")
