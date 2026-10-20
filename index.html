@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#101827">
+<title>APK Vietsub AI</title>
+<style>
+:root{color-scheme:dark;--bg:#0b1120;--panel:#121c2e;--line:#26354d;--text:#edf3ff;--muted:#a7b5cc;--blue:#78aaff}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at top,#172b4a,var(--bg) 60%);font:16px system-ui,-apple-system,Segoe UI,sans-serif;color:var(--text);min-height:100vh}.wrap{max-width:820px;margin:auto;padding:28px 16px 60px}.brand{font-weight:800;letter-spacing:.4px;color:#b8d2ff}.hero{padding:32px 0 22px}h1{font-size:clamp(30px,7vw,48px);line-height:1.08;margin:12px 0}p{color:var(--muted);line-height:1.65}.panel{background:#121c2eeb;border:1px solid var(--line);border-radius:20px;padding:22px;margin:16px 0;box-shadow:0 18px 50px #0002}.drop{border:2px dashed #48658e;border-radius:16px;padding:26px 16px;text-align:center;background:#0b1424}.drop strong{display:block;font-size:18px;margin-bottom:8px}.btn{display:inline-flex;justify-content:center;align-items:center;gap:8px;border:0;border-radius:12px;background:#8bb7ff;color:#081326;font-weight:800;padding:13px 18px;font-size:15px;cursor:pointer}.btn:disabled{opacity:.45;cursor:not-allowed}.file{display:none}.filename{margin-top:12px;overflow-wrap:anywhere;color:#d9e6ff}.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:16px}.tag{display:inline-block;border:1px solid #304664;border-radius:99px;padding:5px 10px;color:#c2d7f8;font-size:12px}.notice{border-left:3px solid #e5b95d;padding:10px 14px;background:#282316;border-radius:0 10px 10px 0;color:#f4dfae;font-size:14px;line-height:1.6}.steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px}.step{background:#0d1728;border:1px solid var(--line);border-radius:14px;padding:15px}.step b{display:block;margin-bottom:6px}.small{font-size:13px}.footer{margin-top:24px;font-size:13px;color:#8192ad}
+</style></head>
+<body><main class="wrap">
+<div class="brand">◈ VZC TOOLS / APK LAB</div>
+<header class="hero"><span class="tag">BẢN THỬ NGHIỆM GIAO DIỆN</span><h1>Việt hóa APK<br>ngay trên điện thoại</h1><p>Tải tệp APK lên để bắt đầu quy trình kiểm tra. Mục tiêu là dịch các chuỗi giao diện sang tiếng Việt, giữ nguyên mã định danh và đóng gói lại khi có bộ xử lý máy chủ tương thích.</p></header>
+<section class="panel"><h2>1. Chọn tệp APK</h2><p>Chọn một APK mà bạn có quyền chỉnh sửa. Tệp chỉ được chọn trong trình duyệt ở bước này.</p>
+<div class="drop"><strong>📦 Chọn APK từ điện thoại</strong><p class="small">Định dạng .apk · Không cài đặt hoặc chạy tệp đã tải lên</p><label class="btn" for="apk">Chọn tệp APK</label><input class="file" id="apk" type="file" accept=".apk,application/vnd.android.package-archive"><div class="filename" id="filename">Chưa chọn tệp</div></div>
+<div class="row"><button class="btn" id="start" disabled>Kiểm tra tệp</button><span class="tag">Chưa tải lên máy chủ</span></div><p id="status" aria-live="polite" class="small"></p>
+<div class="notice"><b>Lưu ý:</b> Đây là bản giao diện ban đầu, chưa thực hiện dịch hoặc tạo APK mới. Không có dữ liệu nào được gửi đi khi chọn tệp. Cần tích hợp bộ xử lý APK phía máy chủ trước khi bật tính năng Việt hóa thật.</div></section>
+<section class="panel"><h2>2. Quy trình dự kiến</h2><div class="steps"><div class="step"><b>🔎 Phân tích</b><p class="small">Đọc tên gói, tài nguyên và chuỗi văn bản; từ chối tệp sai định dạng.</p></div><div class="step"><b>🌐 Dịch</b><p class="small">Dịch tài nguyên văn bản, giữ placeholder, ID và cấu trúc XML.</p></div><div class="step"><b>🧰 Đóng gói</b><p class="small">Build, ký APK bằng khóa an toàn và kiểm tra kết quả.</p></div></div></section>
+<section class="panel"><h2>Vì sao chưa thể dịch ngay?</h2><p>Việc Việt hóa APK thực sự thường cần công cụ phân tích/đóng gói Android như Apktool, môi trường build và ký APK. Một hàm serverless web thông thường không đủ để xử lý mọi APK lớn hoặc mọi game. Phương án tiết kiệm là giữ giao diện trên Vercel và chạy bộ xử lý riêng chỉ khi cần, có giới hạn dung lượng và tự xóa tệp tạm.</p></section>
+<div class="footer">APK Vietsub AI · Mã nguồn công khai · Không gửi tệp APK lên máy chủ trong bản này.</div>
+</main><script>
+const input=document.getElementById('apk'),nameEl=document.getElementById('filename'),btn=document.getElementById('start'),status=document.getElementById('status');
+input.addEventListener('change',()=>{const f=input.files&&input.files[0];if(!f){nameEl.textContent='Chưa chọn tệp';btn.disabled=true;return;}nameEl.textContent=f.name+' · '+(f.size/1024/1024).toFixed(2)+' MB';btn.disabled=!f.name.toLowerCase().endsWith('.apk');status.textContent=btn.disabled?'Tệp không có đuôi .apk. Hãy chọn lại.':'Đã chọn tệp trên thiết bị. Tệp chưa được tải lên.';});
+btn.addEventListener('click',()=>{status.textContent='Giao diện đã nhận tệp cục bộ. Bộ xử lý APK phía máy chủ chưa được cấu hình nên chưa thể phân tích, dịch hoặc xuất APK.';});
+</script></body></html>
