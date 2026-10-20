@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: apk-vietsub-worker
+    runtime: docker
+    dockerfilePath: ./worker/Dockerfile
+    dockerContext: .
+    plan: free
+    healthCheckPath: /
+    envVars:
+      - key: MAX_UPLOAD_MB
+        value: "100"
+      - key: ALLOWED_ORIGIN
+        value: "*"
